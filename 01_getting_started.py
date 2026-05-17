@@ -11,7 +11,7 @@ def process_customer_item(customer_id: int, item_id: int) -> str:
     # Process a single customer
     import time
     time.sleep(5)
-    assert item_id != 1
+    #assert item_id != 1
     return f"Processed {customer_id}, item {item_id}"
 
 @task
