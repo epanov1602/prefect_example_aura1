@@ -2,32 +2,33 @@ from prefect import flow, task
 import random
 
 @task
-def get_customer_ids() -> list[str]:
+def get_customer_ids() -> list[int]:
     # Fetch customer IDs from a database or API
-    return [f"customer{n}" for n in random.choices(range(100), k=10)]
+    return [n for n in random.choices(range(100), k=10)]
 
 @task
-def process_customer_item(customer_id: str, id: int) -> str:
+def process_customer_item(customer_id: int, item_id: int) -> str:
     # Process a single customer
-    return f"Processed {customer_id}, item {id}"
+    import time
+    time.sleep(5)
+    assert item_id != 1
+    return f"Processed {customer_id}, item {item_id}"
 
 @task
-def process_customer(customer_id: str) -> str:
+def process_customer(customer_id: int) -> str:
     # Process a single customer
-    i1 = process_customer_item(customer_id, 1)
-    i2 = process_customer_item(customer_id, 2)
-    return f"Processed {customer_id}: {i1} and {i2}"
+    future_items = process_customer_item.map(customer_id=customer_id, item_id=range(1 + (customer_id % 3)))
+    items = [i.result() for i in future_items]
+    return f"Processed {customer_id}: {items}"
 
 @flow
 def main() -> list[str]:
     customer_ids = get_customer_ids()
     # Map the process_customer task across all customer IDs
-    results = []
-    for i in customer_ids:
-        results.append(process_customer(i))
-    print(f"Results: {results}")
-    return results
-
+    results = process_customer.map(customer_ids)
+    printable = [r.result() for r in results]
+    print(f"Results: {printable}")
+    return printable
 
 if __name__ == "__main__":
     main()
